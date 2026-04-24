@@ -205,60 +205,60 @@ function initIntro() {
   tl.to(logo, {
     opacity: 1,
     scale: 1,
-    duration: 0.8,
+    duration: 1.2,
     ease: 'power4.out',
   }, 0.3);
 
   // Tagline appear
   tl.to(tagline, {
     opacity: 1,
-    duration: 0.6,
+    duration: 0.8,
     ease: 'power3.out',
-  }, 0.8);
+  }, 1.0);
 
   // Borders extend
   tl.to(borderTop, {
     scaleX: 1,
     transformOrigin: 'left center',
-    duration: 1.5,
+    duration: 2.5,
     ease: 'power3.inOut',
-  }, 1.0);
+  }, 1.2);
   tl.to([borderLeft, borderRight], {
     scaleY: 1,
     transformOrigin: 'top center',
-    duration: 1.5,
+    duration: 2.5,
     ease: 'power3.inOut',
-  }, 1.0);
+  }, 1.2);
 
   // Fade out matrix
   tl.to(introCanvas, {
     opacity: 0,
-    duration: 0.8,
+    duration: 1.0,
     ease: 'power2.out',
     onComplete: () => rain.stop(),
-  }, 2.2);
+  }, 3.2);
 
   // Logo disappear
   tl.to(logo, {
     opacity: 0,
     scale: 0.8,
-    duration: 0.5,
+    duration: 0.6,
     ease: 'power4.in',
-  }, 2.4);
-  tl.to(tagline, { opacity: 0, duration: 0.3 }, 2.4);
+  }, 3.6);
+  tl.to(tagline, { opacity: 0, duration: 0.4 }, 3.6);
   tl.to([borderTop, borderLeft, borderRight], {
     opacity: 0,
-    duration: 0.4,
-  }, 2.6);
+    duration: 0.5,
+  }, 3.8);
 
   // Reveal
   tl.add(() => {
     // Dispatch intro event
     document.dispatchEvent(new CustomEvent('intro'));
     introComplete = true;
-  }, 2.8);
+  }, 4.2);
 
-  tl.to(mount, { opacity: 1, duration: 0.3 }, 3.0);
+  tl.to(mount, { opacity: 1, duration: 0.3 }, 4.5);
 
   tl.add(() => {
     intro.remove();
@@ -266,7 +266,7 @@ function initIntro() {
     // Show hero stats
     const stats = $('.s-hero__stats');
     if (stats) stats.classList.add('visible');
-  }, 3.5);
+  }, 5.2);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1213,6 +1213,450 @@ function initStatsTileStagger() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// A-CERT CUSTOM ELEMENT
+// ═══════════════════════════════════════════════════════════════════
+
+class ACert extends HTMLElement {
+  static observedAttributes = ['progress'];
+
+  connectedCallback() {
+    this.link = this.querySelector('a');
+    if (this.link) {
+      this.link.addEventListener('click', (e) => {
+        if (this.link.href.includes('#')) {
+          e.preventDefault();
+        }
+      });
+    }
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === 'progress') {
+      this.style.setProperty('--progress', newValue);
+      if (newValue === '1' || newValue === '-1') {
+        this.classList.remove('is-inview');
+      } else {
+        this.classList.add('is-inview');
+      }
+    }
+  }
+}
+
+customElements.define('a-cert', ACert);
+
+// ═══════════════════════════════════════════════════════════════════
+// CERTS 3D SCROLL REEL
+// ═══════════════════════════════════════════════════════════════════
+
+function initCertsReel() {
+  const el = document.getElementById('certs');
+  if (!el || !el.classList.contains('s-work')) return;
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  // ── Data ──
+  const certs = [
+    { name: 'Introduction to Cyber Security', issuer: 'Infosys', year: '2026', status: 'earned', imgSrc: null, site: 'https://www.infosys.com/springboard/' },
+    { name: 'Ethical Hacker', issuer: 'Cisco', year: '2025', status: 'earned', imgSrc: null, site: 'https://www.netacad.com/' },
+    { name: 'Android Bug Bounty', issuer: 'EC-Council', year: '2025', status: 'earned', imgSrc: null, site: 'https://www.eccouncil.org/' },
+    { name: 'CEH — Certified Ethical Hacker', issuer: 'EC-Council', year: '2026', status: 'planned', imgSrc: null, site: 'https://www.eccouncil.org/train-certify/certified-ethical-hacker-ceh/' },
+  ];
+
+  const SLIDES_PER_CERT = 3;
+  const works = [];
+  certs.forEach(cert => {
+    for (let i = 0; i < SLIDES_PER_CERT; i++) works.push(cert);
+  });
+
+  // ── Generate cert card HTML ──
+  const scene = el.querySelector('.js-certs-scene');
+
+  works.forEach((cert, index) => {
+    const key = Math.random().toString(36).slice(2, 6) + '-' + String(index).padStart(4, '0') + '/' + String(works.length).padStart(2, '0');
+    const badgeClass = cert.status === 'planned' ? 'badge--planned' : 'badge--earned';
+    const badgeText = cert.status === 'planned' ? 'Planned' : 'Earned · ' + cert.year;
+
+    const placeholder = `<div class="a__card__placeholder">
+      <svg viewBox="0 0 120 84" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1.5" y="1.5" width="117" height="81" rx="3" stroke="currentColor" stroke-width="1" stroke-dasharray="5 3"/>
+        <circle cx="60" cy="32" r="12" stroke="currentColor" stroke-width="1"/>
+        <path d="M52 44 L60 56 L68 44" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="30" y="62" width="60" height="2" rx="1" fill="currentColor" opacity="0.3"/>
+        <rect x="40" y="68" width="40" height="2" rx="1" fill="currentColor" opacity="0.2"/>
+      </svg>
+    </div>`;
+
+    const imgContent = cert.imgSrc
+      ? `<img src="${cert.imgSrc}" class="a__card__img" alt="${cert.name}" width="800" height="560" loading="lazy" />`
+      : placeholder;
+
+    const cardHTML = `<a-cert class="s__scene__work js-certs-work">
+      <div class="a__inner">
+        <a href="${cert.site}" target="_blank" rel="noopener noreferrer">
+          <div class="a__card">
+            <div class="a__card__bar">
+              <span class="a__card__key">#${key}</span>
+              <span class="a__card__badge ${badgeClass}">${badgeText}</span>
+            </div>
+            ${imgContent}
+            <div class="a__card__footer">
+              <span class="a__card__name">${cert.name}</span>
+              <span class="a__card__issuer">${cert.issuer}</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </a-cert>`;
+
+    scene.insertAdjacentHTML('beforeend', cardHTML);
+  });
+
+  // ── State ──
+  const container = el.querySelector('.js-certs-container');
+  const ruler     = el.querySelector('.js-certs-ruler');
+  const canvas    = el.querySelector('.js-certs-canvas');
+  const ctx       = canvas.getContext('2d');
+  const title     = el.querySelector('.js-certs-title');
+
+  const mask = {
+    width: 0, height: 0, maxScale: 1, lines: [],
+    el:        el.querySelector('.js-certs-mask'),
+    svg:       el.querySelector('.js-certs-mask-svg'),
+    pathOuter: el.querySelector('.js-certs-mask-path-outer'),
+    pathInner: el.querySelector('.js-certs-mask-path-inner'),
+    pathLines: el.querySelector('.js-certs-mask-path-lines'),
+  };
+
+  const letters = [];
+  el.querySelectorAll('.js-certs-letter').forEach(letterEl => {
+    letters.push({ el: letterEl, ghosts: [], width: 0, height: 0, top: 0, left: 0, freq: 1, total: 0 });
+  });
+
+  const workEls = [];
+  el.querySelectorAll('.js-certs-work').forEach(workEl => {
+    workEls.push({ el: workEl });
+  });
+
+  let points = [];
+  let animationProgress = 0;
+  let pointsProgress = 0;
+  let stateVal = 0;
+  let scrollProgress = 0;
+  let isPaused = true;
+  let speed = 0;
+  let tl = null;
+
+  const last = { animationProgress: 0, pointsProgress: 0 };
+
+  // ── Set canvas stroke color ──
+  function setCtxStyle() {
+    const color = getComputedStyle(el).getPropertyValue('--color-secondary').trim() || '#09090b';
+    ctx.strokeStyle = color;
+  }
+
+  // ── Set section height + canvas size ──
+  function setSize() {
+    el.style.setProperty('--height', workEls.length * 50 + 'lvh');
+
+    const bounding = container.getBoundingClientRect();
+    el._bounding = {
+      left: bounding.left,
+      top: bounding.top,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+
+    canvas.width = el._bounding.width;
+    canvas.height = el._bounding.height;
+    speed = Math.hypot(el._bounding.width, el._bounding.height) * 4;
+  }
+
+  // ── Build pill mask ──
+  function setMask() {
+    const width = mask.el.clientWidth;
+    const height = mask.el.clientHeight;
+    mask.width = width;
+    mask.height = height;
+
+    mask.svg.style.width = width + 'px';
+    mask.svg.style.height = height + 'px';
+
+    const elBounding = el.getBoundingClientRect();
+    const rulerBounding = ruler.getBoundingClientRect();
+    const rulerWidth = rulerBounding.width;
+    const rulerHeight = rulerBounding.height;
+    const offsetX = rulerBounding.left - elBounding.left;
+    const offsetY = rulerBounding.top - elBounding.top;
+
+    const dOuter = `M -1 0 L ${width + 2} 0 L ${width + 2} ${height} L -1 ${height} Z`;
+
+    const corners = {
+      tl: { x: offsetX, y: offsetY },
+      tr: { x: offsetX + rulerWidth, y: offsetY },
+      br: { x: offsetX + rulerWidth, y: offsetY + rulerHeight },
+      bl: { x: offsetX, y: offsetY + rulerHeight },
+    };
+
+    let size = (corners.tr.x - corners.tl.x) / 2;
+    mask.maxScale = window.innerWidth / size;
+
+    let dInner = `M ${corners.tl.x} ${corners.tl.y + size} A ${size} ${size} 0 0 1 ${corners.tr.x} ${corners.tr.y + size} L ${corners.br.x} ${corners.br.y - size} A ${size} ${size} 0 0 1 ${corners.bl.x} ${corners.bl.y - size} Z`;
+    const linesClip = `${dOuter} ${dInner}`;
+
+    mask.pathOuter.setAttribute('d', `${dOuter} ${dInner}`);
+
+    const thickness = window.innerWidth > 767 ? 16 : 8;
+    corners.tl.x += thickness; corners.tl.y += thickness;
+    corners.tr.x -= thickness; corners.tr.y += thickness;
+    corners.br.x -= thickness; corners.br.y -= thickness;
+    corners.bl.x += thickness; corners.bl.y -= thickness;
+
+    size = (corners.tr.x - corners.tl.x) / 2;
+    dInner = `M ${corners.tl.x} ${corners.tl.y + size} A ${size} ${size} 0 0 1 ${corners.tr.x} ${corners.tr.y + size} L ${corners.br.x} ${corners.br.y - size} A ${size} ${size} 0 0 1 ${corners.bl.x} ${corners.bl.y - size} Z`;
+    mask.pathInner.setAttribute('d', `${dOuter} ${dInner}`);
+
+    mask.lines = [];
+    const vLines = window.innerWidth > 767 ? 12 : 8;
+    const gapX = width / vLines;
+    const gapY = height * 0.1;
+    const hLines = Math.ceil(height / gapY);
+
+    for (let i = 1; i < vLines; i++) {
+      const x = gapX * i;
+      mask.lines.push({ p1: { x, y: 0 }, p2: { x, y: height } });
+    }
+    for (let i = 0; i < hLines; i++) {
+      const y = gapY * i;
+      mask.lines.push({ p1: { x: 0, y }, p2: { x: width, y } });
+    }
+
+    let dLines = '';
+    mask.lines.forEach(line => {
+      dLines += `M ${line.p1.x} ${line.p1.y} L ${line.p2.x} ${line.p2.y} `;
+    });
+    mask.pathLines.setAttribute('d', dLines);
+    mask.pathLines.style.clipPath = `path(evenodd, '${linesClip}')`;
+  }
+
+  // ── Ghost letters ──
+  function setLetters() {
+    const bounding = el._bounding;
+    letters.forEach((letter, j) => {
+      letter.ghosts.forEach(g => g.el.remove());
+      letter.ghosts = [];
+
+      const rect = letter.el.getBoundingClientRect();
+      letter.width = rect.width;
+      letter.height = rect.height;
+      letter.top = rect.top - bounding.top;
+      letter.left = rect.left;
+      letter.freq = 1 + Math.random();
+
+      const multiplier = window.innerWidth > 767 ? 0.75 : 0.5;
+      letter.total = Math.round((bounding.width / letter.width) * multiplier) + 2;
+
+      for (let i = 0; i < letter.total; i++) {
+        const ghostEl = document.createElement('span');
+        ghostEl.classList.add('s__scene__letter', 'js-certs-letter');
+        ghostEl.innerText = letter.el.innerText;
+        ghostEl.dataset.letter = letter.el.innerText;
+        scene.appendChild(ghostEl);
+
+        const ghost = {
+          el: ghostEl,
+          x: letter.left,
+          y: letter.top,
+          i: i - letter.total * 0.5,
+          p: (i / letter.total - 0.5) * 2,
+          ap: Math.abs(i / letter.total - 0.5) * 2,
+        };
+
+        ghostEl.style.top = ghost.y + 'px';
+        ghostEl.style.left = ghost.x + 'px';
+        ghostEl.style.zIndex = (j !== 1 && j !== 2 && (j + letters.length + i) % 5 === 0) ? 3 : 1;
+        ghostEl.style.setProperty('--ix', ghost.i);
+        ghostEl.style.setProperty('--iy', ((j + 1) / (letters.length + 1) - 0.5) * 2);
+        ghostEl.style.setProperty('--ap', ghost.ap);
+        ghostEl.style.setProperty('--p', ghost.p);
+
+        letter.ghosts.push(ghost);
+      }
+    });
+  }
+
+  // ── Randomize cert card positions ──
+  function setWorks() {
+    workEls.forEach((work, i) => {
+      work.el.style.setProperty('--size', 0.5 + Math.random() * 0.5);
+      work.el.style.setProperty('--y', (0.5 + Math.random() * 0.5) * (i % 2 ? -1 : 1));
+    });
+  }
+
+  // ── Dot grid points ──
+  function setPoints() {
+    const bounding = el._bounding;
+    points = [];
+    const gap = 24;
+    const cols = Math.ceil((bounding.width * 1.2) / gap);
+    const rows = Math.ceil((bounding.height * 1.2) / gap);
+    const offsetX = (bounding.width - cols * gap) * 0.5;
+    const offsetY = (bounding.height - rows * gap) * 0.5;
+    const hWidth = bounding.width * 0.5;
+    const hHeight = bounding.height * 0.5;
+
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        const x = i * gap + offsetX;
+        const y = j * gap + offsetY;
+        points.push({
+          x, y,
+          dx: hWidth - x,
+          dy: hHeight - y,
+          flowX: 0,
+        });
+      }
+    }
+  }
+
+  // ── GSAP timeline ──
+  function setTimeline() {
+    const worksElArr = workEls.map(w => w.el);
+
+    if (tl) tl.kill();
+
+    // Proxy object for tweening our local variables
+    const proxy = { animationProgress: 0, pointsProgress: 0, stateVal: 0 };
+
+    tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: el,
+        start: 'top 25%',
+        end: 'bottom 75%',
+        scrub: 1,
+      },
+      onUpdate: () => {
+        animationProgress = proxy.animationProgress;
+        pointsProgress = proxy.pointsProgress;
+        stateVal = proxy.stateVal;
+        scene.style.setProperty('--state', stateVal);
+      },
+    });
+
+    tl.fromTo(mask.el, { scale: 1 }, { scale: mask.maxScale, duration: 0.75, ease: 'power4.in' }, 0);
+    tl.fromTo(scene, { scale: 0.75 }, { scale: 1, duration: 0.75, ease: 'power3.in' }, 0);
+    tl.fromTo(container, { clipPath: 'inset(0 1rem)' }, { clipPath: 'inset(0 0rem)', duration: 0.75, ease: 'power3.in' }, 0);
+    tl.fromTo(proxy, { pointsProgress: 0 }, { pointsProgress: 1, duration: 1, ease: 'power4.inOut' }, 0);
+    tl.fromTo(proxy, { stateVal: 0 }, { stateVal: 1, duration: 0.75, ease: 'power4.in' }, 0);
+
+    tl.fromTo(worksElArr,
+      { attr: { progress: 1 } },
+      { attr: { progress: -1 }, ease: 'slow(0.15, 0.6)', stagger: 0.25 },
+      0.75
+    );
+
+    tl.fromTo(proxy,
+      { animationProgress: 0 },
+      { animationProgress: 10000, duration: tl.totalDuration(), ease: 'power1.out' },
+      0.75
+    );
+
+    tl.fromTo(proxy, { stateVal: 1 }, { stateVal: 0, duration: 0.75, ease: 'power4.inOut', immediateRender: false }, '-=1');
+    tl.fromTo(mask.el, { scale: mask.maxScale }, { scale: 1, duration: 0.75, ease: 'power4.inOut', immediateRender: false }, '-=1');
+    tl.fromTo(scene, { scale: 1 }, { scale: 0.75, duration: 0.75, ease: 'power3.inOut', immediateRender: false }, '-=1');
+    tl.fromTo(container, { clipPath: 'inset(0 0rem)' }, { clipPath: 'inset(0 1rem)', duration: 0.75, ease: 'power3.inOut', immediateRender: false }, '-=1');
+    tl.fromTo(proxy, { pointsProgress: 1 }, { pointsProgress: 0, duration: 1, ease: 'power4.inOut' }, '-=1');
+  }
+
+  // ── Move ghost letters ──
+  function moveLetters() {
+    letters.forEach(letter => {
+      const letterSpeed = speed * letter.freq;
+      letter.ghosts.forEach((ghost, index) => {
+        let progress = (((animationProgress % letterSpeed) / letterSpeed + index / letter.total) % 1) / 0.7 - 0.15;
+        ghost.el.style.setProperty('--progress', progress);
+      });
+    });
+  }
+
+  // ── Move + draw dot grid ──
+  function movePoints() {
+    points.forEach(p => {
+      p.flowX = (animationProgress * -0.05) % 24;
+    });
+  }
+
+  function drawPoints() {
+    const bounding = el._bounding;
+    const rAP = Math.round(animationProgress * 100) / 100;
+    const rPP = Math.round(pointsProgress * 100) / 100;
+
+    if (rPP === last.pointsProgress && rAP === last.animationProgress) return;
+
+    ctx.clearRect(0, 0, bounding.width, bounding.height);
+    ctx.beginPath();
+
+    points.forEach(point => {
+      const x = point.x + point.dx * (1 - pointsProgress) * 0.2 + point.flowX;
+      const y = point.y + point.dy * (1 - pointsProgress) * 0.2;
+      ctx.rect(x, y, 0.5, 0.5);
+    });
+
+    ctx.stroke();
+    last.pointsProgress = rPP;
+    last.animationProgress = rAP;
+  }
+
+  // ── RAF tick ──
+  function tick() {
+    if (isPaused) return;
+
+    scrollProgress = Math.max(Math.min(1, ScrollTrigger.positionInViewport(el, 'top')), 0) * -1
+      + (1 - Math.max(Math.min(1, ScrollTrigger.positionInViewport(el, 'bottom')), 0));
+
+    el.style.setProperty('--scroll-progress', scrollProgress);
+
+    movePoints();
+    moveLetters();
+    drawPoints();
+
+    requestAnimationFrame(tick);
+  }
+
+  // ── Intersection observer for pause/resume ──
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      isPaused = !entry.isIntersecting;
+      if (!isPaused) requestAnimationFrame(tick);
+    });
+  }, { threshold: 0 });
+  io.observe(el);
+
+  // ── Resize handler ──
+  function onResize() {
+    setCtxStyle();
+    setSize();
+    setMask();
+    setPoints();
+    setLetters();
+    setWorks();
+    setTimeline();
+  }
+
+  window.addEventListener('resize', () => {
+    onResize();
+  });
+
+  // ── Init ──
+  setCtxStyle();
+  setSize();
+  setMask();
+  setPoints();
+  setLetters();
+  setWorks();
+  setTimeline();
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // MAIN INIT
 // ═══════════════════════════════════════════════════════════════════
 
@@ -1246,6 +1690,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollParallax();
   initScrollAnimations();
   initScrollbar();
+  initCertsReel();
 
   // Start intro
   initIntro();
